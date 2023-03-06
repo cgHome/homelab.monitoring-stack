@@ -1,0 +1,236 @@
+version: '3.7'
+
+# Based on: https://github.com/lpasquali/hell-compose-monitor
+
+x-logging: &loki-logging
+  driver: loki
+  options:
+    loki-retries: 5
+    loki-batch-size: 400
+    loki-url: ${LOKI_URL}
+
+x-healthcheck: &default-healthcheck
+  test: [ "CMD", "echo", "true"]
+  interval: 10s
+  timeout: 60s
+  retries: 5
+  start_period: 20s
+
+volumes:
+  grafana-data:
+    name: grafana
+  loki-wal:
+    name: loki
+  prometheus-data:
+    name: prometheus
+  alertmanager-data:
+    name: alertmanager
+  influxdb-data:
+    name: influxdb
+
+networks:
+  monitoring:
+    name: ${COMPOSE_PROJECT_NAME}
+
+services:
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    restart: always
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring
+    volumes:
+      - grafana-data:/var/lib/grafana:rw
+      - ./grafana/provisioning:/etc/grafana/provisioning:rw
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD-SHELL", "wget -t1 -q -O - http://grafana:3000/api/health | grep ok"]
+    logging: *loki-logging
+
+  loki:
+    container_name: loki
+    image: grafana/loki:2.7.4
+    command: -config.file=/etc/loki/config.yml
+    restart: always
+    ports:
+      - "3100:3100"
+    networks:
+      - monitoring
+    volumes:
+      - loki-wal:/wal:rw
+      - ./loki:/etc/loki:ro
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD-SHELL", "wget -t1 -q -O - http://loki:3100/ready | grep ready"]
+    logging: *loki-logging
+
+  promtail:
+    container_name: promtail
+    image: grafana/promtail:2.7.3
+    command: -config.file=/etc/promtail/config.yml
+    restart: always
+    ports:
+      - 1514:1514
+      - 9080:9080
+    networks:
+      - monitoring
+    volumes:
+      - ./promtail/:/etc/promtail/
+    logging: *loki-logging
+
+  # prometheus:
+  #   container_name: prometheus
+  #   image: prom/prometheus:v2.42.0
+  #   command:
+  #     - '--config.file=/etc/prometheus/config.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #     - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+  #     - '--web.console.templates=/usr/share/prometheus/consoles'
+  #   restart: always
+  #   ports:
+  #     - 9090:9090
+  #   networks:
+  #     - monitoring
+  #   volumes:
+  #     - prometheus-data:/prometheus:rw
+  #     - ./prometheus/:/etc/prometheus:ro
+  #   healthcheck: 
+  #     <<: *default-healthcheck
+  #     test: ["CMD-SHELL", "wget -t1 -q -O - http://prometheus:9090/-/healthy | grep Healthy"]
+  #   logging: *loki-logging
+
+  # alertmanager-init:
+  #   container_name: alertinit
+  #   image: dinutac/jinja2docker:2.1.6
+  #   hostname: jinja2docker
+  #   command: "jinja2 /templates/config.yml.j2 --format=yaml -o /output/config.yml"
+  #   entrypoint: ""
+  #   volumes:
+  #     - ./alertmanager/config:/output:rw
+  #     - ./alertmanager/templates:/templates:ro
+  #   environment:
+  #     - TELEGRAM_TOKEN=${TELEGRAM_POOPTOOTH_TOKEN}
+  #     - TELEGRAM_BOT_NAME=${TELEGRAM_POOPTOOTH_CHAT_ID}
+
+  # alertmanager:
+  #   container_name: alertmanager
+  #   image: prom/alertmanager:v0.25.0
+  #   command:
+  #     - '--config.file=/etc/alertmanager/config/config.yml'
+  #     - '--storage.path=/alertmanager'
+  #   restart: always
+  #   ports:
+  #     - 9093:9093/tcp
+  #   networks:
+  #     - monitoring
+  #   volumes:
+  #     - alertmanager-data:/alertmanager:rw
+  #     - ./alertmanager/config:/etc/alertmanager/config:ro
+  #     - ./alertmanager/alert-templates:/etc/alertmanager/templates:ro
+  #   depends_on:
+  #     alertmanager-init:
+  #       condition: service_completed_successfully
+  #   healthcheck:
+  #     <<: *default-healthcheck
+  #     test: ["CMD-SHELL", "wget -t1 -q -O - http://alertmanager:9093/api/v2/status | grep ready"]
+  #   logging: *loki-logging
+
+  syslog-ng:
+    container_name: syslog-ng
+    image: balabit/syslog-ng:4.0.1
+    command: -edv
+    restart: always
+    ports:
+      - 514:514/udp
+      - 601:601/tcp
+    networks:
+      - monitoring
+    volumes:
+      - ./syslog-ng:/etc/syslog-ng:rw
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD", "/usr/sbin/syslog-ng-ctl", "stats"]
+    logging: *loki-logging
+
+  # influxdb:
+  #   container_name: influxdb
+  #   image: influxdb:latest
+  #   restart: always
+  #   ports:
+  #     - 8086:8086
+  #   networks:
+  #     - monitoring
+  #   volumes:
+  #     - influxdb-data:/var/lib/influxdb:rw
+  #   environment:
+  #     - INFLUXDB_DB=grafana
+  #     - INFLUXDB_USER=grafana
+  #     - INFLUXDB_USER_PASSWORD=password
+  #     - INFLUXDB_ADMIN_ENABLED=true
+  #     - INFLUXDB_ADMIN_USER=admin 
+  #     - INFLUXDB_ADMIN_PASSWORD=password
+  #   healthcheck:
+  #     <<: *default-healthcheck
+  #     test: ["CMD-SHELL", "curl -f http://influxdb:8086/ping"]
+  #   logging: *loki-logging
+
+
+  # node-exporter:
+  #   image: quay.io/prometheus/node-exporter:latest
+  #   volumes:
+  #     - /proc:/host/proc:ro
+  #     - /sys:/host/sys:ro
+  #     - /:/rootfs:ro
+  #     - /:/host:ro,rslave
+  #   command:
+  #     - '--path.rootfs=/host'
+  #     - '--path.procfs=/host/proc'
+  #     - '--path.sysfs=/host/sys'
+  #     - --collector.filesystem.ignored-mount-points
+  #     - "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
+  #   networks:
+  #     - monitoring
+  #   restart: always
+  #   logging: *loki-logging
+
+  # blackbox-exporter:
+  #   image: prom/blackbox-exporter:master
+  #   volumes:
+  #     - ./blackbox/:/config
+  #   command:
+  #     - '--config.file=/config/blackbox.yml'
+  #   networks:
+  #     - monitoring
+  #   # ports:
+  #   #   - 9115:9115
+  #   restart: always
+  #   logging: *loki-logging
+
+  # apcupsd-exporter:
+  #   image: hhhzzzhou/apcupsd-exporter:latest
+  #   command: "-apcupsd.addr host.docker.internal:3551"
+  #   extra_hosts:
+  #     host.docker.internal: host-gateway
+  #   # ports:
+  #   #   - 9162:9162
+  #   networks:
+  #     - monitoring
+  #   restart: always
+  #   logging: *loki-logging
+
+  # ping-exporter:
+  #   image: czerwonk/ping_exporter:latest
+  #   volumes:
+  #     - ./pingexporter/:/config:ro
+  #   # ports:
+  #   #   - 9427:9427
+  #   networks:
+  #     - monitoring
+  #   restart: always
+  #   logging: *loki-logging

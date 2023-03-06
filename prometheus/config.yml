@@ -1,0 +1,60 @@
+# my global config
+global:
+  scrape_interval:     20s
+  evaluation_interval: 20s
+  # scrape_timeout is set to the global default (10s).
+
+  # Attach these labels to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  # external_labels:
+  #     monitor: 'hell-lab'
+  #     cluster: 'hell'
+  #     segment: 'hell-dmz'
+# Load and evaluate rules in this file every 'evaluation_interval' seconds.
+rule_files:
+  - 'alerts/*.yml'
+
+# alert
+alerting:
+  alertmanagers:
+  - scheme: http
+    static_configs:
+    - targets:
+      - "alertmanager:9093"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+
+  - job_name: 'loki'
+    scrape_interval: 60s
+    static_configs:
+      - targets: ['loki:3100']
+
+  - job_name: 'promtail'
+    static_configs:
+      - targets: ['promtail:9080']
+
+  - job_name: 'prometheus'
+    scrape_interval: 15s
+    static_configs:
+         - targets: ['prometheus:9090']
+
+  - job_name: 'docker-metrics'
+    static_configs:
+      - targets: ["172.18.0.1:9323"]
+    relabel_configs:
+      # Only keep containers that have a `prometheus-job` label.
+      - source_labels: [__meta_docker_container_label_prometheus_job]
+        regex: .+
+        action: keep
+      # Use the task labels that are prefixed by `prometheus-`.
+      - regex: __meta_docker_container_label_prometheus_(.+)
+        action: labelmap
+        replacement: $1
+        
