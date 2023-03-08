@@ -28,6 +28,10 @@ volumes:
   influxdb-data:
     # name: influxdb
 
+networks:
+  monitoring:
+    name: ${COMPOSE_PROJECT_NAME}
+
 services:
   grafana:
     image: grafana/grafana:latest
@@ -237,7 +241,3 @@ services:
   #     - monitoring
   #   restart: always
   #   logging: *loki-logging
-
-  networks:
-    monitoring:
-      name: ${COMPOSE_PROJECT_NAME}
