@@ -58,7 +58,7 @@ services:
       - monitoring
     volumes:
       - ./loki:/etc/loki:ro
-      - loki-data:/loki:rw
+      # - loki-data:/loki:rw
     healthcheck:
       <<: *default-healthcheck
       test: ["CMD-SHELL", "wget -t1 -q -O - http://loki:3100/ready | grep ready"]
