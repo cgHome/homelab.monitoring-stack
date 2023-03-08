@@ -57,9 +57,10 @@ sudo systemctl restart docker
 - https://docs.technotim.live/posts/grafana-loki/
 - https://jlovec.net/2021/03/07/collecting-docker-logs-with-loki/
 - https://zeigren.com/posts/monitoring_prometheus_loki/
+- https://github.com/grafana/loki/tree/main/production/docker
 - https://github.com/lpasquali/hell-compose-monitor
 - https://github.com/ihyoudou/my-homeserver-metrics-stack
 
 ## Trademarks
 
-© Ch. Gross / cflat-inc.org
+© Ch. Gross / cflat-inc.org, 2023

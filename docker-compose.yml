@@ -18,15 +18,11 @@ x-healthcheck: &default-healthcheck
 
 volumes:
   grafana-data:
-    # name: grafana
-  loki-wal:
-    # name: loki
+  loki-data:
+  #loki-wal:
   prometheus-data:
-    # name: prometheus
   alertmanager-data:
-    # name: alertmanager
   influxdb-data:
-    # name: influxdb
 
 networks:
   monitoring:
@@ -63,7 +59,8 @@ services:
       - monitoring
     volumes:
       - ./loki:/etc/loki:ro
-      - loki-wal:/wal:rw
+      - loki-data:/loki:rw
+      # - loki-wal:/wal:rw    -> ?https://grafana.com/docs/loki/latest/operations/storage/wal/? 
     healthcheck:
       <<: *default-healthcheck
       test: ["CMD-SHELL", "wget -t1 -q -O - http://loki:3100/ready | grep ready"]
