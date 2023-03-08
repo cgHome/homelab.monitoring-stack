@@ -56,6 +56,7 @@ sudo systemctl restart docker
 - https://thesmarthomejourney.com/2021/08/23/loki-grafana-log-aggregation/
 - https://docs.technotim.live/posts/grafana-loki/
 - https://jlovec.net/2021/03/07/collecting-docker-logs-with-loki/
+- https://zeigren.com/posts/monitoring_prometheus_loki/
 - https://github.com/lpasquali/hell-compose-monitor
 - https://github.com/ihyoudou/my-homeserver-metrics-stack
 

@@ -1,6 +1,6 @@
 # Based on: https://github.com/lpasquali/hell-compose-monitor
 
-version: '3.7'
+version: '3.8'
 
 x-logging: &loki-logging
   driver: loki
@@ -30,7 +30,6 @@ volumes:
 
 networks:
   monitoring:
-    name: ${COMPOSE_PROJECT_NAME}
 
 services:
   grafana:
@@ -86,7 +85,7 @@ services:
       - ./promtail/:/etc/promtail/
     healthcheck:
       <<: *default-healthcheck
-      test: ["CMD-SHELL", "wget -t1 -q -O - http://promtail:9080/ready | grep ok"]
+      # test: ["CMD-SHELL", "wget -t1 -q -O - http://promtail:9080/ready | grep ok"] >> command not found
     logging: *loki-logging
 
   # prometheus:
