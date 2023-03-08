@@ -1,13 +1,13 @@
-version: '3.7'
-
 # Based on: https://github.com/lpasquali/hell-compose-monitor
+
+version: '3.7'
 
 x-logging: &loki-logging
   driver: loki
   options:
     loki-retries: 5
     loki-batch-size: 400
-    loki-url: ${LOKI_URL}
+    loki-url: http://localhost:3100/loki/api/v1/push
 
 x-healthcheck: &default-healthcheck
   test: [ "CMD", "echo", "true"]
@@ -34,17 +34,17 @@ networks:
 
 services:
   grafana:
-    container_name: grafana
     image: grafana/grafana:latest
+    container_name: grafana
     restart: always
     ports:
       - "3000:3000"
     networks:
       - monitoring
     volumes:
-      - grafana-data:/var/lib/grafana:rw
       - ./grafana/provisioning:/etc/grafana/provisioning:rw
       - ./grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+      - grafana-data:/var/lib/grafana:rw
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
@@ -54,8 +54,8 @@ services:
     logging: *loki-logging
 
   loki:
-    container_name: loki
     image: grafana/loki:2.7.4
+    container_name: loki
     command: -config.file=/etc/loki/config.yml
     restart: always
     ports:
@@ -63,18 +63,20 @@ services:
     networks:
       - monitoring
     volumes:
-      - loki-wal:/wal:rw
       - ./loki:/etc/loki:ro
+      - loki-wal:/wal:rw
     healthcheck:
       <<: *default-healthcheck
       test: ["CMD-SHELL", "wget -t1 -q -O - http://loki:3100/ready | grep ready"]
     logging: *loki-logging
 
   promtail:
-    container_name: promtail
     image: grafana/promtail:2.7.3
+    container_name: promtail
     command: -config.file=/etc/promtail/config.yml
     restart: always
+    stdin_open: true
+    tty: true
     ports:
       - 1514:1514
       - 9080:9080
@@ -82,11 +84,14 @@ services:
       - monitoring
     volumes:
       - ./promtail/:/etc/promtail/
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD-SHELL", "wget -t1 -q -O - http://promtail:9080/ready | grep ok"]
     logging: *loki-logging
 
   # prometheus:
-  #   container_name: prometheus
   #   image: prom/prometheus:v2.42.0
+  #   container_name: prometheus
   #   command:
   #     - '--config.file=/etc/prometheus/config.yml'
   #     - '--storage.tsdb.path=/prometheus'
@@ -106,8 +111,8 @@ services:
   #   logging: *loki-logging
 
   # alertmanager-init:
-  #   container_name: alertinit
   #   image: dinutac/jinja2docker:2.1.6
+  #   container_name: alertinit
   #   hostname: jinja2docker
   #   command: "jinja2 /templates/config.yml.j2 --format=yaml -o /output/config.yml"
   #   entrypoint: ""
@@ -119,8 +124,8 @@ services:
   #     - TELEGRAM_BOT_NAME=${TELEGRAM_POOPTOOTH_CHAT_ID}
 
   # alertmanager:
-  #   container_name: alertmanager
   #   image: prom/alertmanager:v0.25.0
+  #   container_name: alertmanager
   #   command:
   #     - '--config.file=/etc/alertmanager/config/config.yml'
   #     - '--storage.path=/alertmanager'
@@ -142,10 +147,12 @@ services:
   #   logging: *loki-logging
 
   syslog-ng:
-    container_name: syslog-ng
     image: balabit/syslog-ng:4.0.1
+    container_name: syslog-ng
     command: -edv
     restart: always
+    stdin_open: true
+    tty: true
     ports:
       - 514:514/udp
       - 601:601/tcp
@@ -159,8 +166,8 @@ services:
     logging: *loki-logging
 
   # influxdb:
-  #   container_name: influxdb
   #   image: influxdb:latest
+  #   container_name: influxdb
   #   restart: always
   #   ports:
   #     - 8086:8086
