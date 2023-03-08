@@ -5,12 +5,12 @@
 - Grafana
 - Grafana Loki
 - Grafana Promtail
-- Prometheus
 - syslog-ng
-- (InfluxDB)
-- Node exporter
-- Ping exporter
-- Blackbox exporter
+- (InfluxDB) > not impl yet
+- (Prometheus)
+- (Node exporter)
+- (Ping exporter)
+- (Blackbox exporter)
 
 ## Requirements
 

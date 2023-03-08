@@ -18,19 +18,15 @@ x-healthcheck: &default-healthcheck
 
 volumes:
   grafana-data:
-    name: grafana
+    # name: grafana
   loki-wal:
-    name: loki
+    # name: loki
   prometheus-data:
-    name: prometheus
+    # name: prometheus
   alertmanager-data:
-    name: alertmanager
+    # name: alertmanager
   influxdb-data:
-    name: influxdb
-
-networks:
-  monitoring:
-    name: ${COMPOSE_PROJECT_NAME}
+    # name: influxdb
 
 services:
   grafana:
@@ -241,3 +237,7 @@ services:
   #     - monitoring
   #   restart: always
   #   logging: *loki-logging
+
+  networks:
+    monitoring:
+      name: ${COMPOSE_PROJECT_NAME}
