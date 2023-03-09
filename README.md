@@ -36,9 +36,13 @@ Edit docker daemon config (Linux: /etc/docker/daemon.json / macOS: ~/.docker/dae
 {
     "log-driver": "loki",
     "log-opts": {
+      "loki-url": "http://localhost:3100/loki/api/v1/push"
       "loki-retries": "5",
       "loki-batch-size": "400",
-      "loki-url": "http://xxxxxxx:3100/loki/api/v1/push"
+      # [OR] > ??
+      "mode": non-blocking
+      "max-buffer-size": 4m
+      "loki-retries": "3"
     }
 }
 ```
