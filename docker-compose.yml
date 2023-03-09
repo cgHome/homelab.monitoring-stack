@@ -58,7 +58,7 @@ services:
     networks:
       - monitoring
     volumes:
-      - ./loki:/etc/loki:ro
+      - ./loki/config.yml:/etc/loki/config.yml:ro
       - loki-data:/loki:rw
     healthcheck:
       <<: *default-healthcheck
