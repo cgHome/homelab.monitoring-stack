@@ -51,14 +51,18 @@ services:
   loki:
     image: grafana/loki:2.7.4
     container_name: loki
-    command: -config.file=/etc/loki/config.yml
+    # command: "-config.file=/etc/loki/config.yaml"
+    command: "-config.file=/etc/loki/local-config.yaml"
     restart: always
+    stdin_open: true
+    tty: true
     ports:
       - "3100:3100"
     networks:
       - monitoring
     volumes:
-      - ./loki/config.yml:/etc/loki/config.yml:ro
+    # FIXME: docker compose run --entrypoint="" loki ls -lisa /etc/loki >> can't open '/etc/loki': Permission denied
+    # - ./loki/:/etc/loki/
       - loki-data:/loki:rw
     healthcheck:
       <<: *default-healthcheck
@@ -68,7 +72,7 @@ services:
   promtail:
     image: grafana/promtail:2.7.3
     container_name: promtail
-    command: -config.file=/etc/promtail/config.yml
+    command: "-config.file=/etc/promtail/config.yaml"
     restart: always
     stdin_open: true
     tty: true
@@ -88,7 +92,7 @@ services:
   #   image: prom/prometheus:v2.42.0
   #   container_name: prometheus
   #   command:
-  #     - '--config.file=/etc/prometheus/config.yml'
+  #     - '--config.file=/etc/prometheus/config.yaml'
   #     - '--storage.tsdb.path=/prometheus'
   #     - '--web.console.libraries=/usr/share/prometheus/console_libraries'
   #     - '--web.console.templates=/usr/share/prometheus/consoles'
@@ -109,7 +113,7 @@ services:
   #   image: dinutac/jinja2docker:2.1.6
   #   container_name: alertinit
   #   hostname: jinja2docker
-  #   command: "jinja2 /templates/config.yml.j2 --format=yaml -o /output/config.yml"
+  #   command: "jinja2 /templates/config.yaml.j2 --format=yaml -o /output/config.yaml"
   #   entrypoint: ""
   #   volumes:
   #     - ./alertmanager/config:/output:rw
@@ -122,7 +126,7 @@ services:
   #   image: prom/alertmanager:v0.25.0
   #   container_name: alertmanager
   #   command:
-  #     - '--config.file=/etc/alertmanager/config/config.yml'
+  #     - '--config.file=/etc/alertmanager/config/config.yaml'
   #     - '--storage.path=/alertmanager'
   #   restart: always
   #   ports:
@@ -206,7 +210,7 @@ services:
   #   volumes:
   #     - ./blackbox/:/config
   #   command:
-  #     - '--config.file=/config/blackbox.yml'
+  #     - '--config.file=/config/blackbox.yaml'
   #   networks:
   #     - monitoring
   #   # ports:
